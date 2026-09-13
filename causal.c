@@ -15,7 +15,9 @@ int main(void) {
   // la meme séequence de nombres a chaque execution du programmme)
   srand(time(NULL));
 
-  int limit = 10000;  // nombre d'observations à generer
+  int limit = 10000;      // nombre d'observations à generer
+  int compteur_A1 = 0;    // nombre de fois ou A=1
+  int compteur_A1_B1 = 0; // nombre de fois ou A=1 et B=1
 
   // Ouvre le fichier
   FILE *fichier = fopen("tinyworld_v1a.csv", "w");
@@ -51,6 +53,13 @@ int main(void) {
         }
       }
 
+      if (A == 1) {
+        compteur_A1++;
+      }
+      if (A == 1 && B == 1) {
+        compteur_A1_B1++;
+      }
+
       // === Calcul de C, en fonction de B ===
       // Meme logique que pour B : si B=1, C=1 tres probable (90%);
       //                         : si B=0, C=1 peu probable (10%)
@@ -69,6 +78,9 @@ int main(void) {
       // -> sera remplace plus tard par une ecriture dans un fichier CSV
       fprintf(fichier, "%d,%d,%d\n", A, B, C);
   }
+
+  float prcentage = (float)compteur_A1_B1 / compteur_A1 * 100;
+  printf("Sachant A=1, B=1 dans %.2f des cas\n", prcentage);
 
   fclose(fichier);
   return 0;
