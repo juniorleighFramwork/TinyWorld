@@ -1,0 +1,9 @@
+
+1. Écrire l'en-tête : "A,B,C\n"
+2. Boucle de 10 000 fois :
+   a. Tirer A aléatoirement (0 ou 1)
+   b. Calculer B EN FONCTION de A (pas complètement aléatoire —
+      s'il pleut, forte chance que le sol soit mouillé)
+   c. Calculer C EN FONCTION de B
+   d. Écrire la ligne "A,B,C\n" dans le fichier
+3. Fermer le fichier
