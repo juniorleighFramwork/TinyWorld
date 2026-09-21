@@ -19,6 +19,9 @@ int main(void) {
   int limit = 10000;      // nombre d'observations à generer
   int compteur_A1 = 0;    // nombre de fois ou A=1
   int compteur_A1_B1 = 0; // nombre de fois ou A=1 et B=1
+  int compteur_A0 = 0;    // nombre de fois ou A=0
+  int compteur_A0_C1 = 0; // nombre de fois ou A=0 et C=1
+  int compteur_A1_C1 = 0;  // nombre de fois ou A=1 et C=1
 
   // Ouvre le fichier
   FILE *fichier = fopen("tinyworld_v1b.csv", "w");
@@ -73,13 +76,26 @@ int main(void) {
         if (rdm_nbr3 < 20) { C = 1; }
       }
 
+      if (A == 0) {
+        compteur_A0++;
+      }
+      if (A == 0 && C == 1) {
+        compteur_A0_C1++;
+      }
+      if (A == 1 && C == 1) {
+        compteur_A1_C1++;
+      }
+
       // Affiche chaque ligne generee (A, B, C)
-      // -> sera remplace plus tard par une ecriture dans un fichier CSV
       fprintf(fichier, "%d,%d,%d\n", A, B, C);
   }
-
-  float prcentage = (float)compteur_A1_B1 / compteur_A1 * 100;
+  int prct = 100;
+  float prcentage = (float)compteur_A1_B1 / compteur_A1 * prct;
+  float prcentage_2 = (float)compteur_A0_C1 / compteur_A0 * prct;
+  float prcentage_3 = (float)compteur_A1_C1 / compteur_A1 * prct;
   printf("Sachant A=1, B=1 dans %.2f des cas\n", prcentage);
+  printf("Sachant A=0, C=1 dans %.2f des cas\n", prcentage_2);
+  printf("Sachant A=1, C=1 dans %.2f des cas\n", prcentage_3);
 
   fclose(fichier);
   return 0;
