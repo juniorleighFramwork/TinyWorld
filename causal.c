@@ -2,14 +2,29 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define P_A_GIVEN_Z1 80
+#define P_A_GIVEN_Z0 20
+#define P_B_GIVEN_A1 90
+#define P_B_GIVEN_A0 10
+#define P_C_GIVEN_Z1 80
+#define P_C_GIVEN_Z0 20
   /*
-      *  TinyWorld - V1.b
-      * Introduit un facteur cache Z, qui influence A ET C.
-      * Cree ainsi une correlation A<->C, MEME SI A ne cause PAS C
-      * directement — objectif : montrer qu'un modele naif pourrait
-      * apprendre a tort "A predit C", alors que le vrai mecanisme
-      * passe par Z (jamais observe dans le CSV).
-  */
+    * TinyWorld - V1.b
+    *
+    * Causal structure:
+    *   Z (hidden, never written to CSV)
+    *   Z -> A
+    *   A -> B   (real causal link)
+    *   Z -> C   (C does NOT depend on A or B directly)
+    *
+    * Result: A and C appear correlated in the data, but this
+    * correlation is entirely spurious - it comes from the shared
+    * cause Z, not from any real effect of A on C.
+    *
+    * Goal: show that a naive model trained only on (A,B,C) could
+    * wrongly learn "A predicts C", missing that the real driver (Z)
+    * is never observed.
+ */
 int main(void) {
 
   // Initalise le generateur aleatoire (une seule fois, sinon on obtient toujours
@@ -25,6 +40,10 @@ int main(void) {
 
   // Ouvre le fichier
   FILE *fichier = fopen("tinyworld_v1b.csv", "w");
+  if (fichier == NULL) {
+      printf("Erreur : impossible d'ouvrir le fichier\n");
+      return 1;
+  }
   fprintf(fichier, "A,B,C\n");
 
   for (int i = 0; i < limit; i++) {
@@ -41,15 +60,13 @@ int main(void) {
       int rdm_nbr = rand() % 100;
       int rdm_nbr2 = rand() % 100;
       int rdm_nbr3 = rand() % 100;
-      int nb_prcent = 90;
-      int nb_prcent2 = 10;
 
 
       // === A depend de Z ===
       if (Z == 1) {
-        if (rdm_nbr < 80) { A = 1; }
+        if (rdm_nbr < P_A_GIVEN_Z1) { A = 1; }
       } else {
-        if (rdm_nbr < 20) { A = 1; }
+        if (rdm_nbr < P_A_GIVEN_Z0) { A = 1; }
       }
 
       // === B depend de A (relation causal reelle) ===
@@ -57,9 +74,9 @@ int main(void) {
       // Si A=0 : B=1 avec seulement 10% de chance (faible dependance)
 
       if (A == 1) {
-        if (rdm_nbr2 < nb_prcent) { B = 1; }
+        if (rdm_nbr2 < P_B_GIVEN_A1) { B = 1; }
       } else {
-        if (rdm_nbr2 < nb_prcent2) { B = 1; }
+        if (rdm_nbr2 < P_B_GIVEN_A0) { B = 1; }
       }
 
       if (A == 1) {
@@ -71,9 +88,9 @@ int main(void) {
 
       // === C depend de Z (PAS de A, ni de B directement !) ===
       if (Z == 1) {
-        if (rdm_nbr3 < 80) { C = 1; }
+        if (rdm_nbr3 < P_C_GIVEN_Z1) { C = 1; }
       } else {
-        if (rdm_nbr3 < 20) { C = 1; }
+        if (rdm_nbr3 < P_C_GIVEN_Z0) { C = 1; }
       }
 
       if (A == 0) {
@@ -89,13 +106,17 @@ int main(void) {
       // Affiche chaque ligne generee (A, B, C)
       fprintf(fichier, "%d,%d,%d\n", A, B, C);
   }
-  int prct = 100;
-  float prcentage = (float)compteur_A1_B1 / compteur_A1 * prct;
-  float prcentage_2 = (float)compteur_A0_C1 / compteur_A0 * prct;
-  float prcentage_3 = (float)compteur_A1_C1 / compteur_A1 * prct;
-  printf("Sachant A=1, B=1 dans %.2f des cas\n", prcentage);
-  printf("Sachant A=0, C=1 dans %.2f des cas\n", prcentage_2);
-  printf("Sachant A=1, C=1 dans %.2f des cas\n", prcentage_3);
+
+  float prcentage = (float)compteur_A1_B1 / compteur_A1 * 100;
+  float prcentage_2 = (float)compteur_A0_C1 / compteur_A0 * 100;
+  float prcentage_3 = (float)compteur_A1_C1 / compteur_A1 * 100;
+  // P(B=1 | A=1) real causal relationship, should be high (~90%)
+  printf("Sachant A=1, B=1 dans %.2f%% des cas\n", prcentage);
+
+  // P(C=1 | A=0) and P(C=1 | A=1) should look correlated
+  // even though A has no real effect on C (confound via Z)
+  printf("Sachant A=0, C=1 dans %.2f%% des cas\n", prcentage_2);
+  printf("Sachant A=1, C=1 dans %.2f%% des cas\n", prcentage_3);
 
   fclose(fichier);
   return 0;
