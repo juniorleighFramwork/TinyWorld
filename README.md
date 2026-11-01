@@ -38,13 +38,83 @@ Added a hidden variable `Z` influencing both `A` and `C`, creating a fake correl
 
 Result: P(C=1 | A=1) ≈ 67-68% vs P(C=1 | A=0) ≈ 31-32% — a strong-looking correlation, entirely driven by `Z`, not by `A`. Confirmed with a reference calculation in Python.
 
-### V2 — Simple models — in progress
+### V2 — Controlled causal interventions
 
-Training a logistic regression from scratch in C (sigmoid, gradient descent, log-loss, no libraries) on the V1.b dataset. Goal: check whether the model assigns real weight to `Z` despite it having no causal effect — which it should, since a plain logistic regression has no way to tell correlation from causation on its own.
+Implemented in `causal_v2.c`, separately from V1.b. All variables are binary.
+The causal graph is `Z → A`, `Z → C`, `A → B`. Z is generated internally
+and hidden from the displayed observations.
 
-### V3 — Interventions
+The model uses the following probability parameters:
 
-Manually forcing values (e.g. `A = 1, Z = 0`) to break the training correlation, and checking whether the model adapts correctly or stays anchored to the spurious signal.
+| Parameter | Value |
+|---|---:|
+| P(Z=1) | 50% |
+| P(A=1 given Z=1) | 80% |
+| P(A=1 given Z=0) | 20% |
+| P(B=1 given A=1) | 90% |
+| P(B=1 given A=0) | 10% |
+| P(C=1 given Z=1) | 80% |
+| P(C=1 given Z=0) | 20% |
+
+Select `experiment_mode` in `main`, then recompile:
+
+| Mode | Behavior |
+|---|---|
+| 0 | Observation: generate A according to Z. |
+| 1 | do(A=0): impose A=0 independently of Z. |
+| 2 | do(A=1): impose A=1 independently of Z. |
+
+An intervention replaces the usual mechanism generating A. The mechanisms
+for B and C remain unchanged: B depends on A, and C depends on Z.
+Conditioning on A instead selects a subgroup of observational data without
+changing any generating mechanism.
+
+Compile and execute:
+
+```bash
+gcc -std=c11 -Wall -Wextra -Wpedantic causal_v2.c -o causal_v2
+./causal_v2
+```
+
+The program reports marginal frequencies for A, B and C, and conditional
+frequencies for B and C given A. It displays `N/A` when the conditioning
+group contains no observations, because that frequency cannot be calculated.
+
+The following results were obtained with 10,000 observations per mode and
+seed 42 (`srand(42)`) in the tested macOS environment. These are empirical
+simulation frequencies, rounded to one decimal place, not exact probabilities.
+
+| Mode | A=1 | B=1 | C=1 | C=1 given A=0 | C=1 given A=1 |
+|---|---:|---:|---:|---:|---:|
+| Observation | 50.7% | 50.5% | 50.6% | 32.1% | 68.6% |
+| do(A=0) | 0.0% | 10.1% | 50.8% | 50.8% | N/A |
+| do(A=1) | 100.0% | 89.8% | 50.8% | N/A | 50.8% |
+
+In the defined model, A and C share the cause Z, but A does not cause C.
+Their theoretical observational conditional probabilities are 32% and 68%,
+whereas P(C=1) under either intervention is 50%. The measured frequencies
+are consistent with this model; they do not constitute exhaustive validation
+of the implementation. For B, the theoretical conditional probabilities
+in observation coincide with the corresponding intervention probabilities
+(10% and 90%) in this graph.
+
+All three modes were compiled without warnings using the command above.
+Repeated runs of each mode produced identical output in the tested environment.
+A fixed seed does not guarantee identical results across C library
+implementations, because `rand()` sequences can differ. The expression
+`rand() % 100` can introduce modulo bias, and finite samples fluctuate around
+the intended probabilities. Interventions also omit the random draw for A,
+so observation and intervention use subsequent random draws differently.
+Automated validation has not yet been implemented.
+
+### V3 — Future agent evaluation — not implemented
+
+Controlled interventions are already part of V2. No logistic regression,
+trained model or real AI agent is currently evaluated by `causal_v2.c`.
+The results above describe the simulator's behavior under defined causal
+rules; they do not demonstrate an AI agent's causal understanding or reliability.
+Future agent evaluation will require explicit tasks, success criteria and
+controlled experiments.
 
 ### V4 — Dynamic world (long-term horizon)
 
