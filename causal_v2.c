@@ -36,7 +36,7 @@ int main(void) {
   // Define the number of observations in this experiment
   int num_observations = 10000;
 
-  // Select 0 for observation or 1 for do(A=0)
+  // Select 0 for observation or 1 for do(A=0), or 2 for do(A=1)
   int experiment_mode = 1;
 
   // Initialize counters for observed value equal to 1
@@ -63,6 +63,8 @@ int main(void) {
 
     if (experiment_mode == 1) {
         a = 0;
+    } else if (experiment_mode == 2) {
+        a = 1;
     } else {
         if (z == 1) {
           a = random_event(P_A_GIVEN_Z1);
