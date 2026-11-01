@@ -37,7 +37,7 @@ int main(void) {
   int num_observations = 10000;
 
   // Select 0 for observation or 1 for do(A=0), or 2 for do(A=1)
-  int experiment_mode = 1;
+  int experiment_mode = 2;
 
   // Initialize counters for observed value equal to 1
   int count_a1 = 0;
@@ -50,6 +50,10 @@ int main(void) {
   // Count B outcomes seperatly for each value of A
   int count_a1_b1 = 0;
   int count_a0_b1 = 0;
+
+  // Count C outcomes separately for each value of A
+  int count_a1_c1 = 0;
+  int count_a0_c1 = 0;
 
   // Generating ten observations from the causal model
   for (int i = 0; i < num_observations; i++)
@@ -103,6 +107,10 @@ int main(void) {
     if (a == 1 && b == 1) { count_a1_b1++; }
     if (a == 0 && b == 1) { count_a0_b1++; }
 
+    // Track C outcomes for each value of A
+    if (a == 1 && c == 1) { count_a1_c1++; }
+    if (a == 0 && c == 1) { count_a0_c1++; }
+
     // Display individual observations only for small experiments
     if (num_observations <= 10) {
        printf("Observation %d: A=%d, B=%d, C=%d\n", i+1, a, b, c);
@@ -137,7 +145,7 @@ int main(void) {
   printf("Frequency of B = 1: %.1f%%\n", frequency_b);
   printf("Frequency of C = 1: %.1f%%\n", frequency_c);
 
-  // Display conditional frequencies
+  // Display conditional frequencies for B
   if (count_a1 > 0) {
       printf("Frequency of B = 1 given A = 1: %.1f%%\n", frequency_b_given_a1);
   } else {
@@ -148,6 +156,21 @@ int main(void) {
       printf("Frequency of B = 1 given A = 0: %.1f%%\n", frequency_b_given_a0);
   } else {
       printf("Frequency of B = 1 given A = 0: N/A (no observation)\n");
+  }
+
+    // Display conditional frequencies for C
+  if (count_a1 > 0) {
+      double frequency_c_given_a1 = count_a1_c1 * 100.0 / count_a1;
+      printf("Frequency of C = 1 given A = 1: %.1f%%\n", frequency_c_given_a1);
+  } else {
+      printf("Frequency of C = 1 given A = 1: N/A (no observations)\n");
+  }
+
+  if (count_a0 > 0) {
+      double frequency_c_given_a0 = count_a0_c1 * 100.0 / count_a0;
+      printf("Frequency of C = 1 given A = 0: %.1f%%\n", frequency_c_given_a0);
+  } else {
+      printf("Frequency of C = 1 given A = 0: N/A (no observations)\n");
   }
 
   return 0;
