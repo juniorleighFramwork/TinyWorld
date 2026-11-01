@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 /* Causal model parameters: probabilities expressed as percentages. */
 #define P_A_GIVEN_Z1 80
 #define P_A_GIVEN_Z0 20
@@ -37,7 +38,7 @@ int main(void) {
   int num_observations = 10000;
 
   // Select 0 for observation or 1 for do(A=0), or 2 for do(A=1)
-  int experiment_mode = 2;
+  int experiment_mode = 1;
 
   // Initialize counters for observed value equal to 1
   int count_a1 = 0;
@@ -47,7 +48,7 @@ int main(void) {
   // Count observations for each value A
   int count_a0 = 0;
 
-  // Count B outcomes seperatly for each value of A
+  // Count B outcomes separately for each value of A
   int count_a1_b1 = 0;
   int count_a0_b1 = 0;
 
@@ -55,7 +56,7 @@ int main(void) {
   int count_a1_c1 = 0;
   int count_a0_c1 = 0;
 
-  // Generating ten observations from the causal model
+  // Generate observations from the causal model
   for (int i = 0; i < num_observations; i++)
   {
 
@@ -115,6 +116,22 @@ int main(void) {
     if (num_observations <= 10) {
        printf("Observation %d: A=%d, B=%d, C=%d\n", i+1, a, b, c);
     }
+  }
+
+  // Verify that do(A=0) produces only A=0 observations.
+  if (experiment_mode == 1) {
+      if (count_a1 != 0 || count_a0 != num_observations) {
+          fprintf(stderr, "Validation failed: do(A=0) must produce only A=0 observations.\n");
+          return EXIT_FAILURE;
+      }
+  }
+
+  // Verify that do(A=1) produces only A=1 observations.
+  if (experiment_mode == 2) {
+      if (count_a1 != num_observations || count_a0 != 0) {
+          fprintf(stderr, "Validation failed: do(A=1) must produce only A=1 observations.\n");
+          return EXIT_FAILURE;
+      }
   }
 
   // Display the final counts
