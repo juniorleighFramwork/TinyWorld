@@ -38,7 +38,7 @@ int main(void) {
   int num_observations = 10000;
 
   // Select 0 for observation or 1 for do(A=0), or 2 for do(A=1)
-  int experiment_mode = 1;
+  int experiment_mode = 2;
 
   // Initialize counters for observed value equal to 1
   int count_a1 = 0;
@@ -116,6 +116,12 @@ int main(void) {
     if (num_observations <= 10) {
        printf("Observation %d: A=%d, B=%d, C=%d\n", i+1, a, b, c);
     }
+  }
+
+  // Verify that all observations are counted in the A groups.
+  if (count_a0 + count_a1 != num_observations) {
+      fprintf(stderr, "Validation failed: A group counts must sum to the number of observations.\n");
+      return EXIT_FAILURE;
   }
 
   // Verify that do(A=0) produces only A=0 observations.
