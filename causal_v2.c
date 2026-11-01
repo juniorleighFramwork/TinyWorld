@@ -36,6 +36,9 @@ int main(void) {
   // Define the number of observations in this experiment
   int num_observations = 10000;
 
+  // Select 0 for observation or 1 for do(A=0)
+  int experiment_mode = 1;
+
   // Initialize counters for observed value equal to 1
   int count_a1 = 0;
   int count_b1 = 0;
@@ -55,13 +58,19 @@ int main(void) {
     // Generate one value for the hidden variable Z.
     int z = random_event(50);
 
-    // Generate A according to the value of the hidden variable Z
+    // Generate A observationally or fix it by intervention.
     int a;
 
-    if (z == 1)
-    { a = random_event(P_A_GIVEN_Z1);}
-    else
-    { a = random_event(P_A_GIVEN_Z0);}
+    if (experiment_mode == 1) {
+        a = 0;
+    } else {
+        if (z == 1) {
+          a = random_event(P_A_GIVEN_Z1);
+        } else {
+          a = random_event(P_A_GIVEN_Z0);
+        }
+    }
+
 
     // Generate B according to the value of A
     int b;
@@ -127,9 +136,17 @@ int main(void) {
   printf("Frequency of C = 1: %.1f%%\n", frequency_c);
 
   // Display conditional frequencies
-  printf("Frequency of B = 1 given A = 1: %.1f%%\n", frequency_b_given_a1);
-  printf("Frequency of B = 1 given A = 0: %.1f%%\n", frequency_b_given_a0);
+  if (count_a1 > 0) {
+      printf("Frequency of B = 1 given A = 1: %.1f%%\n", frequency_b_given_a1);
+  } else {
+      printf("Frequency of B = 1 given A = 1: N/A (no observation)\n");
+  }
 
+  if (count_a0 > 0) {
+      printf("Frequency of B = 1 given A = 0: %.1f%%\n", frequency_b_given_a0);
+  } else {
+      printf("Frequency of B = 1 given A = 0: N/A (no observation)\n");
+  }
 
   return 0;
 }
