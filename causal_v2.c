@@ -40,6 +40,12 @@ int main(void) {
   // Select 0 for observation or 1 for do(A=0), or 2 for do(A=1)
   int experiment_mode = 2;
 
+  // Reject unsupported experiment modes.
+  if (experiment_mode < 0 || experiment_mode > 2) {
+      fprintf(stderr, "Invalid experiment mode: %d.\n", experiment_mode);
+      return EXIT_FAILURE;
+  }
+
   // Initialize counters for observed value equal to 1
   int count_a1 = 0;
   int count_b1 = 0;
@@ -150,6 +156,40 @@ int main(void) {
   double frequency_a = count_a1 * 100.0 / num_observations;
   double frequency_b = count_b1 * 100.0 / num_observations;
   double frequency_c = count_c1 * 100.0 / num_observations;
+
+  // Check frequencies only for sufficiently large experiments.
+  if (num_observations >= 10000) {
+      if (frequency_c < 48.0 || frequency_c > 52.0) {
+          fprintf(stderr, "Validation failed: C=1 frequency is %.4f%%; expected 48%% to 52%%.\n", frequency_c);
+          return EXIT_FAILURE;
+      }
+
+    // Check A frequency only in observational mode
+      if (experiment_mode == 0) {
+          if (frequency_a < 48.0 || frequency_a > 52.0) {
+              fprintf(stderr, "Validation failed: A=1 frequency is %.4f%%; expected 48%% to 52%%.\n", frequency_a);
+              return EXIT_FAILURE;
+          }
+     }
+
+     // Select the expected B frequency for the current mode
+     double expected_b = 50.0;
+
+     if (experiment_mode == 1) {
+        expected_b = 10.0;
+     } else if (experiment_mode == 2) {
+        expected_b = 90.0;
+     }
+
+     // Allow a deviation of two percentage points
+     if (frequency_b < expected_b - 2.0 || frequency_b > expected_b + 2.0) {
+          fprintf(stderr, "Validation failed: B=1 frequency is %.4f%%; expected %.1f%% to %.1f%%.\n", frequency_b,
+                  expected_b - 2.0, expected_b + 2.0);
+                  return EXIT_FAILURE;
+     }
+  } else {
+      printf("Statistical checks skipped: fewer than 10000 observations.\n");
+  }
 
   // Calculate conditional frequencies for B
   double frequency_b_given_a1 = 0.0;

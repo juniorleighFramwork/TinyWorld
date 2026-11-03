@@ -105,7 +105,66 @@ implementations, because `rand()` sequences can differ. The expression
 `rand() % 100` can introduce modulo bias, and finite samples fluctuate around
 the intended probabilities. Interventions also omit the random draw for A,
 so observation and intervention use subsequent random draws differently.
-Automated validation has not yet been implemented.
+
+#### Built-in validation
+
+The program rejects experiment modes outside 0, 1 and 2 before simulation,
+reports the invalid value on `stderr`, and returns `EXIT_FAILURE`.
+
+After simulation, deterministic checks require:
+
+- `count_a0 + count_a1 == num_observations` in every mode.
+- `count_a1 == 0` and `count_a0 == num_observations` under do(A=0).
+- `count_a1 == num_observations` and `count_a0 == 0` under do(A=1).
+
+For experiments with at least 10,000 observations, additional checks compare
+unrounded marginal frequencies with inclusive ranges allowing a deviation
+of two percentage points from the expected values:
+
+| Mode | A=1 | B=1 | C=1 |
+|---|---|---|---|
+| Observation | 50% expected; 48–52% accepted | 50% expected; 48–52% accepted | 50% expected; 48–52% accepted |
+| do(A=0) | Exactly 0%, checked deterministically | 10% expected; 8–12% accepted | 50% expected; 48–52% accepted |
+| do(A=1) | Exactly 100%, checked deterministically | 90% expected; 88–92% accepted | 50% expected; 48–52% accepted |
+
+A failed check reports an explicit message on `stderr` and returns
+`EXIT_FAILURE`. For fewer than 10,000 observations, frequency checks are
+skipped with the message `Statistical checks skipped: fewer than 10000 observations.`
+Deterministic checks remain active. Conditional frequencies are displayed
+but are not covered by these frequency checks.
+
+#### Verification performed
+
+The following scenarios were compiled and executed on temporary source copies
+with C11 and `-Wall -Wextra -Wpedantic`, without compilation warnings:
+
+- Each mode with 10,000 observations and seed 42 returned status 0 and the
+  empirical frequencies reported above. Two executions of each mode produced
+  identical output and exit status.
+- Each mode with 10 observations reported that frequency checks were skipped
+  and returned status 0.
+- Mode 3 was rejected before simulation with `Invalid experiment mode: 3.`
+  and exit status 1.
+- In a temporary mode 2 copy with 10,000 observations, replacing the C
+  generation mechanism with `c = 0` triggered
+  `Validation failed: C=1 frequency is 0.0000%; expected 48% to 52%.`
+  and exit status 1.
+
+Earlier temporary counter injections also exercised each intervention check's
+two conditions separately. Temporary incorrect frequency expectations for A,
+B and C triggered the corresponding failures. No injected fault remains in
+the project source.
+
+The validation checks are integrated into the simulator. The temporary-copy
+scenarios document verification work performed during development; there is
+no committed, reusable test suite yet.
+
+These frequency ranges are practical, non-exhaustive consistency checks,
+not formal statistical tests. A correct simulation can occasionally fall
+outside a range, and passing checks cannot exclude every implementation error.
+Repeating one fixed seed checks local reproducibility, not behavior across
+many seeds or C library implementations. The `rand()` limitations described
+above still apply. These results do not validate any AI agent.
 
 ### V3 — Future agent evaluation — not implemented
 
