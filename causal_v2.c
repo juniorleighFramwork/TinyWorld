@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 /* Causal model parameters: probabilities expressed as percentages. */
@@ -29,7 +30,7 @@ int random_event(int probability) {
 }
 
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
   // Initialize the random number generator with a fixed seed.
   srand(42);
@@ -39,6 +40,25 @@ int main(void) {
 
   // Select 0 for observation or 1 for do(A=0), or 2 for do(A=1)
   int experiment_mode = 2;
+
+  // Accept at most one argument selecting an exact mode string.
+  if (argc > 2) {
+      fprintf(stderr, "Usage: causal_v2 [0|1|2]\n");
+      return EXIT_FAILURE;
+  }
+
+  if (argc == 2) {
+      if (strcmp(argv[1], "0") == 0) {
+          experiment_mode = 0;
+      } else if (strcmp(argv[1], "1") == 0) {
+          experiment_mode = 1;
+      } else if (strcmp(argv[1], "2") == 0) {
+          experiment_mode = 2;
+      } else {
+          fprintf(stderr, "Usage: causal_v2 [0|1|2]\n");
+          return EXIT_FAILURE;
+      }
+  }
 
   // Reject unsupported experiment modes.
   if (experiment_mode < 0 || experiment_mode > 2) {

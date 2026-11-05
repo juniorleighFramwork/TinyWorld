@@ -56,7 +56,7 @@ The model uses the following probability parameters:
 | P(C=1 given Z=1) | 80% |
 | P(C=1 given Z=0) | 20% |
 
-Select `experiment_mode` in `main`, then recompile:
+Select the experiment mode with an optional command-line argument:
 
 | Mode | Behavior |
 |---|---|
@@ -69,12 +69,25 @@ for B and C remain unchanged: B depends on A, and C depends on Z.
 Conditioning on A instead selects a subgroup of observational data without
 changing any generating mechanism.
 
-Compile and execute:
+Compile once:
 
 ```bash
 gcc -std=c11 -Wall -Wextra -Wpedantic causal_v2.c -o causal_v2
-./causal_v2
 ```
+
+Run the desired mode without changing the source or recompiling:
+
+```bash
+./causal_v2 0
+./causal_v2 1
+./causal_v2 2
+```
+
+Running `./causal_v2` without an argument uses mode 2, do(A=1).
+Only the exact argument strings `0`, `1` and `2` are accepted.
+Invalid arguments (including `01`, `1abc` and an empty string) or extra
+arguments are rejected before simulation with `Usage: causal_v2 [0|1|2]`
+on `stderr` and a nonzero exit status (`EXIT_FAILURE`).
 
 The program reports marginal frequencies for A, B and C, and conditional
 frequencies for B and C given A. It displays `N/A` when the conditioning
@@ -108,8 +121,10 @@ so observation and intervention use subsequent random draws differently.
 
 #### Built-in validation
 
-The program rejects experiment modes outside 0, 1 and 2 before simulation,
-reports the invalid value on `stderr`, and returns `EXIT_FAILURE`.
+Command-line validation rejects unsupported arguments before simulation,
+as described above. An additional internal check rejects numeric experiment
+modes outside 0, 1 and 2, reports the invalid value on `stderr`, and returns
+`EXIT_FAILURE`.
 
 After simulation, deterministic checks require:
 
