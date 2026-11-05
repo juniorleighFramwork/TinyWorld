@@ -171,8 +171,54 @@ B and C triggered the corresponding failures. No injected fault remains in
 the project source.
 
 The validation checks are integrated into the simulator. The temporary-copy
-scenarios document verification work performed during development; there is
-no committed, reusable test suite yet.
+scenarios above document verification work performed during development;
+they are distinct from the reusable script described below.
+
+#### Reusable verification script
+
+From the repository root, run:
+
+```sh
+sh tests/test_v2.sh
+```
+
+The script locates the project relative to its own location, so it can also
+be launched from another directory using its absolute path. It requires a
+C11 compiler available as `gcc`, `/bin/sh`, and the standard tools `dirname`,
+`mktemp`, `cmp`, `grep` and `rm` (available on the tested macOS environment).
+
+It compiles with `-std=c11 -Wall -Wextra -Wpedantic` into a unique temporary
+directory, leaving the local `causal_v2` executable untouched. Captured outputs
+are stored there too. Cleanup is registered only after successful directory
+creation and runs on exit, including compilation or verification failure;
+HUP, INT and TERM are handled as well.
+
+The script checks:
+
+- Modes 0, 1 and 2 return status 0 with empty `stderr`.
+- The run without arguments succeeds with empty `stderr` and produces the
+  same output as mode 2.
+- Arguments `3`, `-1`, `abc`, `01`, `1abc`, an empty string, and extra
+  arguments `0 1` return nonzero status, leave `stdout` empty, and print
+  the exact usage line on `stderr`.
+
+Each verification reports `PASS` or `FAIL`. The script returns 0 when all
+checks pass and 1 if a verification fails. If compilation fails, its status
+is captured immediately and propagated without running simulations.
+Setup failures also return nonzero status. No exact `rand()` counts are
+hard-coded in the script.
+
+During development, the script was run successfully from the repository root
+and from another directory. Separately, a temporary project copy containing
+an intentional C compilation error confirmed a nonzero compiler status was
+propagated, simulations were skipped, and the script's temporary directory
+was removed. Cleanup was also checked after successful runs. That compilation
+fault experiment is not performed by the reusable script itself.
+
+Simulation checks rely on the validation built into `causal_v2.c`; this is
+not exhaustive, independent validation of the causal implementation. Output
+comparison verifies the default-mode behavior locally, without requiring
+identical random sequences across C library implementations.
 
 These frequency ranges are practical, non-exhaustive consistency checks,
 not formal statistical tests. A correct simulation can occasionally fall
