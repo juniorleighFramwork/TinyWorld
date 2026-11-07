@@ -1,6 +1,8 @@
 # TinyWorld V3 — Prediction under intervention
 
-Status: proposed experiment. No V3 predictor has been implemented or evaluated.
+Status: observational probability estimation is implemented in `causal_v3.c`.
+Evaluation on new data, prediction under intervention, the constant reference
+comparison and Brier scoring remain proposed and are not implemented.
 The preserved V2 reference is commit `0d1b15e`.
 
 ## Question and hypothesis
@@ -31,6 +33,7 @@ Use floating-point division and probabilities on the scale [0, 1], not
 percentages. If either training group is empty, report that training cannot
 be completed and stop; do not substitute a zero probability.
 
+The following evaluation behavior is planned, not implemented yet.
 After training, freeze p0 and p1. For each evaluation sample, the predictor
 receives only A and returns p0 if A=0 or p1 if A=1. It never receives Z, B,
 the intervention mode, or the current C label before predicting. The evaluator
@@ -118,9 +121,50 @@ exact equality to these theoretical scores is not a success requirement.
 
 ## Measured results
 
-None yet. V2 frequency summaries are context for this design, not V3 training
-estimates or held-out Brier scores. Populate results only after implementation
-and execution of the stated protocol.
+### First milestone: observational training only
+
+The current implementation generates 10,000 observational samples with training
+seed 42. It preserves the V2 random draw order Z, A, B, C, including the unused
+B draw. Training counts use only A and C; Z remains internal to generation.
+The two probabilities are estimated from counts, not hard-coded, stored on
+the scale [0, 1], and converted to percentages only for display.
+
+The following counts and estimates were obtained in the project owner's local
+environment. Estimates shown here are rounded to six decimal places:
+
+| Quantity | Measured value |
+|---|---:|
+| count_a0 | 4930 |
+| count_a1 | 5070 |
+| count_a0_c1 | 1584 |
+| count_a1_c1 | 3476 |
+| p0 = count_a0_c1 / count_a0 | 0.321298 |
+| p1 = count_a1_c1 / count_a1 | 0.685602 |
+
+The owner verified a successful run with exit status 0 and identical output
+from two executions in the same local environment. These are training estimates,
+not theoretical probabilities or held-out evaluation results. No V3 Brier
+score has been measured, and no evaluation phase has been implemented.
+
+Before division, the program checks that A group sizes sum to the training
+sample count, that each joint count lies between zero and its group size,
+and that both groups contain samples.
+
+Three negative scenarios were executed on separate temporary source copies,
+compiled with `-std=c11 -Wall -Wextra -Wpedantic`:
+
+| Injected fault | Expected and observed stderr message | Exit status |
+|---|---|---:|
+| Increment count_a0 after generation | `Validation failed: incorrect A group totals.` | 1 |
+| Set count_a0_c1 to count_a0 + 1 | `Validation failed: joint counts must be between zero and their A group sizes.` | 1 |
+| Set count_a0=0, count_a0_c1=0, count_a1=num_training_observations | `Training failed: both A groups must contain samples.` | 1 |
+
+Each negative run produced empty stdout. The empty-group injection preserved
+the total and joint-count bounds, so it specifically reached the denominator
+check. No injected fault remains in the main source. These development checks
+do not yet constitute a reusable V3 test suite. The measured results cover
+only the training milestone; the full protocol and success criteria below
+still require evaluation work.
 
 ## Success criteria
 

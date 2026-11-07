@@ -227,14 +227,23 @@ Repeating one fixed seed checks local reproducibility, not behavior across
 many seeds or C library implementations. The `rand()` limitations described
 above still apply. These results do not validate any AI agent.
 
-### V3 — Future agent evaluation — not implemented
+### V3 — Observational probability learning — in progress
 
-Controlled interventions are already part of V2. No logistic regression,
-trained model or real AI agent is currently evaluated by `causal_v2.c`.
-The results above describe the simulator's behavior under defined causal
-rules; they do not demonstrate an AI agent's causal understanding or reliability.
-Future agent evaluation will require explicit tasks, success criteria and
-controlled experiments.
+`causal_v3.c` estimates P(C=1 given A=0) and P(C=1 given A=1) from four
+observational counters, using 10,000 samples and training seed 42. In the
+tested local environment, the estimates were p0=0.321298 and p1=0.685602
+(rounded); repeated executions produced identical output.
+
+The program checks group totals, joint-count bounds and nonempty groups
+before division. Three negative scenarios (incorrect total, out-of-bounds
+joint count and empty group) were checked on temporary source copies. They
+are not yet a reusable V3 test suite.
+
+See [the V3 experiment document](docs/v3_experiment.md) for the four measured
+counts, verification results and the remaining protocol. Evaluation on fresh
+data and under intervention, Brier scoring and comparison with a constant
+predictor are not implemented. No real AI agent is evaluated; these training
+estimates do not demonstrate causal understanding or general agent reliability.
 
 ### V4 — Dynamic world (long-term horizon)
 
