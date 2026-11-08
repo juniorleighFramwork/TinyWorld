@@ -240,10 +240,21 @@ joint count and empty group) were checked on temporary source copies. They
 are not yet a reusable V3 test suite.
 
 See [the V3 experiment document](docs/v3_experiment.md) for the four measured
-counts, verification results and the remaining protocol. Evaluation on fresh
-data and under intervention, Brier scoring and comparison with a constant
-predictor are not implemented. No real AI agent is evaluated; these training
-estimates do not demonstrate causal understanding or general agent reliability.
+counts, verification results and the remaining protocol.
+
+The training estimates remain fixed during evaluation on 10,000 new
+observational samples generated with seed 43. In the tested environment,
+the learned predictor's Brier score was 0.216343, versus 0.250000 for the
+constant 0.5 reference (displayed to six decimal places). Both predictors
+use the same evaluation samples; two executions produced identical output.
+A one-off check on a temporary source copy with `prediction = 0.5` confirmed
+both scores were exactly 0.25 before display rounding, with exit status 0.
+This check is not yet part of a reusable V3 verification suite.
+
+The result concerns one observational evaluation sample; evaluation under
+intervention has not yet been implemented or performed. No real AI agent is
+evaluated, and these results do not demonstrate causal understanding or
+general agent reliability.
 
 ### V4 — Dynamic world (long-term horizon)
 

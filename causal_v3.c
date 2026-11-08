@@ -15,7 +15,8 @@
  * The predictor uses only A to predict C.
  * Z remains hidden, and B is not a predictor input.
  *
- * Evaluation on new samples and Brier scoring are not yet implemented.
+ * Observational evaluation and Brier scoring are implemented.
+ * Evaluation under intervention is not yet implemented.
  */
 
 /* Causal model parameters: probabilities expressed as percentages. */
@@ -114,6 +115,7 @@ int main(void) {
   double p0 = (double)count_a0_c1 / count_a0;
   double p1 = (double)count_a1_c1 / count_a1;
 
+
   // Display learned probabilities.
   printf("P(C=1 | A=0): %.6f (%.2f%%)\n", p0, p0 * 100.0);
   printf("P(C=1 | A=1): %.6f (%.2f%%)\n", p1, p1 * 100.0);
@@ -125,6 +127,87 @@ int main(void) {
   printf("A=1 samples: %d\n", count_a1);
   printf("A=0 and C=1 samples: %d\n", count_a0_c1);
   printf("A=1 and C=1 samples: %d\n", count_a1_c1);
+
+
+  // Configure a separate observational evaluation.
+  unsigned int evaluation_seed = 43;
+  int num_evaluation_observations = 10000;
+
+  // Accumulate squared errors for both predictors.
+  double sum_squared_error = 0.0;
+  double sum_squared_error_baseline = 0.0;
+
+  // Initialize the generator for evaluation samples.
+  srand(evaluation_seed);
+
+  // Generate new observational samples for evaluation.
+  for (int i = 0; i < num_evaluation_observations; i++) {
+
+    // Z belongs to the simulator; prediction uses only A.
+    int z = random_event(50);
+    // Generate A from Z during observational evaluation.
+    int a;
+
+    if (z == 1) {
+        a = random_event(P_A_GIVEN_Z1);
+    } else {
+        a = random_event(P_A_GIVEN_Z0);
+    }
+
+    // Generate B from A to preserve the random draw before C.
+    // B is not an input to the learner.
+    int b;
+
+    if (a == 1)
+    { b = random_event(P_B_GIVEN_A1);}
+    else
+    {b = random_event(P_B_GIVEN_A0);}
+
+    // B is intentionally unused after preserving its random draw
+    (void)b;
+    // Generate C according to the hidden variable Z
+    int c;
+
+    if (z == 1) {
+        c = random_event(P_C_GIVEN_Z1);
+    } else {
+        c = random_event(P_C_GIVEN_Z0);
+    }
+
+    // Select the learned probability using only A.
+    double prediction;
+
+    if (a == 0) {
+        prediction = p0;
+    } else {
+        prediction = p1;
+    }
+
+    // Accumulate squared error for the learned predictor.
+    double error = prediction - c;
+    sum_squared_error += error * error;
+
+    // Evaluate the constant baseline on the same sample.
+    double baseline_error = 0.5 - c;
+    sum_squared_error_baseline += baseline_error * baseline_error;
+  }
+
+  // Ensure evaluation contains samples before calculating averages.
+  if (num_evaluation_observations <= 0) {
+      fprintf(stderr, "Evaluation failed: sample count must be positive.\n");
+      return EXIT_FAILURE;
+  }
+
+  // Calculate mean squared errors: the Brier scores.
+  double brier_score = sum_squared_error / num_evaluation_observations;
+  double brier_score_baseline = sum_squared_error_baseline / num_evaluation_observations;
+
+  // Display observational evaluation results.
+  printf("\nObservational evaluation\n");
+  printf("Evaluation seed: %u\n", evaluation_seed);
+  printf("Evaluation observations: %d\n", num_evaluation_observations);
+  printf("Learned predictor Brier score: %.6f\n", brier_score);
+  printf("Constant baseline Brier score: %.6f\n", brier_score_baseline);
 
   return 0;
 }

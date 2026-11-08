@@ -1,8 +1,9 @@
 # TinyWorld V3 — Prediction under intervention
 
-Status: observational probability estimation is implemented in `causal_v3.c`.
-Evaluation on new data, prediction under intervention, the constant reference
-comparison and Brier scoring remain proposed and are not implemented.
+Status: observational probability estimation and evaluation on fresh
+observational data are implemented in `causal_v3.c`, including Brier scoring
+and comparison with the constant reference. Evaluation under intervention
+remains proposed and has not been implemented or performed.
 The preserved V2 reference is commit `0d1b15e`.
 
 ## Question and hypothesis
@@ -33,8 +34,9 @@ Use floating-point division and probabilities on the scale [0, 1], not
 percentages. If either training group is empty, report that training cannot
 be completed and stop; do not substitute a zero probability.
 
-The following evaluation behavior is planned, not implemented yet.
-After training, freeze p0 and p1. For each evaluation sample, the predictor
+For the implemented observational evaluation, p0 and p1 remain fixed after
+training. The intervention evaluations below are still planned.
+For each evaluation sample, the predictor
 receives only A and returns p0 if A=0 or p1 if A=1. It never receives Z, B,
 the intervention mode, or the current C label before predicting. The evaluator
 uses C only to score the prediction. No evaluation labels update the estimates.
@@ -143,8 +145,8 @@ environment. Estimates shown here are rounded to six decimal places:
 
 The owner verified a successful run with exit status 0 and identical output
 from two executions in the same local environment. These are training estimates,
-not theoretical probabilities or held-out evaluation results. No V3 Brier
-score has been measured, and no evaluation phase has been implemented.
+not theoretical probabilities or held-out evaluation results. Observational
+evaluation results are reported separately in the next milestone.
 
 Before division, the program checks that A group sizes sum to the training
 sample count, that each joint count lies between zero and its group size,
@@ -163,8 +165,40 @@ Each negative run produced empty stdout. The empty-group injection preserved
 the total and joint-count bounds, so it specifically reached the denominator
 check. No injected fault remains in the main source. These development checks
 do not yet constitute a reusable V3 test suite. The measured results cover
-only the training milestone; the full protocol and success criteria below
-still require evaluation work.
+only the training milestone; they do not validate the full proposed protocol.
+
+### Second milestone: observational evaluation
+
+After training with seed 42, p0 and p1 remain unchanged. A separate generation
+phase uses seed 43 and 10,000 new observational samples, preserving the draw
+order Z, A, B, C. No evaluation sample updates the training counts or estimates.
+Prediction selects p0 or p1 using only A. Both predictors are scored against
+the same C outcome on each sample, with separate sums of squared errors.
+The evaluation sample count is checked to be positive before averaging.
+
+Measured in the tested local environment:
+
+| Evaluation condition | Seed | Samples | Learned Brier | Constant-reference Brier |
+|---|---:|---:|---:|---:|
+| Fresh observation | 43 | 10000 | 0.216343 | 0.250000 |
+
+Scores in the table are displayed to six decimal places. Compilation with
+`-std=c11 -Wall -Wextra -Wpedantic` produced no warnings. Two executions
+produced identical output, empty stderr and exit status 0.
+
+A separate one-off verification replaced the learned prediction selection
+with `prediction = 0.5;` in a temporary source copy. Both scores were exactly
+equal to 0.25 before rounding; this equality was checked inside that copy,
+not inferred only from formatted output. The copy compiled without warnings,
+returned status 0 and produced empty stderr. Temporary files were removed
+and the main source was preserved. This check is not integrated into a
+reusable V3 test suite.
+
+The learned predictor scored better than the constant reference on this
+observational evaluation sample. This does not establish performance across
+other seeds or distributions, causal understanding, or AI-agent reliability.
+No evaluation under do(A=0) or do(A=1) has yet been implemented or measured;
+their Brier values above remain theoretical expectations.
 
 ## Success criteria
 
