@@ -2,8 +2,9 @@
 
 Status: observational probability estimation and evaluation on fresh
 observational data are implemented in `causal_v3.c`, including Brier scoring
-and comparison with the constant reference. Evaluation under intervention
-remains proposed and has not been implemented or performed.
+and comparison with the constant reference. Evaluation under do(A=0) is also
+implemented and measured. Evaluation under do(A=1) remains proposed and has
+not been implemented or performed.
 The preserved V2 reference is commit `0d1b15e`.
 
 ## Question and hypothesis
@@ -34,8 +35,8 @@ Use floating-point division and probabilities on the scale [0, 1], not
 percentages. If either training group is empty, report that training cannot
 be completed and stop; do not substitute a zero probability.
 
-For the implemented observational evaluation, p0 and p1 remain fixed after
-training. The intervention evaluations below are still planned.
+For the implemented observational and do(A=0) evaluations, p0 and p1 remain
+fixed after training. The do(A=1) evaluation below is still planned.
 For each evaluation sample, the predictor
 receives only A and returns p0 if A=0 or p1 if A=1. It never receives Z, B,
 the intervention mode, or the current C label before predicting. The evaluator
@@ -197,8 +198,44 @@ reusable V3 test suite.
 The learned predictor scored better than the constant reference on this
 observational evaluation sample. This does not establish performance across
 other seeds or distributions, causal understanding, or AI-agent reliability.
-No evaluation under do(A=0) or do(A=1) has yet been implemented or measured;
-their Brier values above remain theoretical expectations.
+The intervention scores in the theoretical table above remain theoretical
+expectations, distinct from the measured do(A=0) results below. No do(A=1)
+evaluation has been implemented or measured.
+
+### Third milestone: evaluation under do(A=0)
+
+A separate evaluation phase uses seed 44 and 10,000 examples. Each example
+generates Z, fixes A=0 without a random draw, generates B according to A,
+and generates C according to Z. The intervention replaces only the mechanism
+for A. Both learned probabilities remain unchanged; A=0 selects p0 for every
+prediction. There is no retraining on intervention outcomes.
+
+Two new sums accumulate squared errors for the learned predictor and constant
+0.5 reference on the same examples. They are separate from the observational
+evaluation sums. The number of examples is checked before division.
+
+| Evaluation condition | Seed | Samples | Learned Brier | Constant-reference Brier |
+|---|---:|---:|---:|---:|
+| do(A=0) | 44 | 10000 | 0.281148 | 0.250000 |
+
+These are measured scores displayed to six decimal places. Training counts
+and estimates remained unchanged (p0=0.321298, p1=0.685602 as displayed), as
+did the observational scores (0.216343 and 0.250000). Compilation with C11
+and `-Wall -Wextra -Wpedantic` produced no warnings. Two complete executions
+produced identical output locally, with empty stderr and exit status 0.
+
+A one-off temporary source copy replaced the prediction selection only during
+do(A=0) with `prediction = 0.5;`. Both intervention scores were checked to
+equal 0.25 before formatting. Compilation produced no warnings, execution
+returned status 0, and earlier-phase output remained unchanged. Temporary
+files were cleaned up; the fault-free main source was preserved. This check
+is not integrated into a reusable V3 test suite.
+
+The learned predictor scored worse than the constant reference on this
+interventional sample, in contrast to the observational evaluation. This is
+consistent with the proposed hypothesis for do(A=0), but does not establish
+performance across seeds or general causal understanding. No measured score
+is attributed to do(A=1), which is still not implemented.
 
 ## Success criteria
 

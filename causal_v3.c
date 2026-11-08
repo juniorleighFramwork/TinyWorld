@@ -16,7 +16,7 @@
  * Z remains hidden, and B is not a predictor input.
  *
  * Observational evaluation and Brier scoring are implemented.
- * Evaluation under intervention is not yet implemented.
+ * Evaluation under do(A=0) is implemented; do(A=1) is not yet implemented.
  */
 
 /* Causal model parameters: probabilities expressed as percentages. */
@@ -208,6 +208,75 @@ int main(void) {
   printf("Evaluation observations: %d\n", num_evaluation_observations);
   printf("Learned predictor Brier score: %.6f\n", brier_score);
   printf("Constant baseline Brier score: %.6f\n", brier_score_baseline);
+
+  // Configure evaluation under do(A=0).
+  unsigned int intervention_seed = 44;
+  int num_intervention_observations = 10000;
+
+  double intervention_sum_squared_error = 0.0;
+  double intervention_sum_squared_error_baseline = 0.0;
+
+  srand(intervention_seed);
+
+  // Generate evaluation samples under do(A=0).
+  for (int i = 0; i < num_intervention_observations; i++) {
+
+      // Generate Z.
+      int z = random_event(50);
+
+      // Fix A to zero instead of generating it from Z.
+      int a = 0;
+
+      // Generate B from A, then C from Z.
+      int b;
+      if (a == 1) {
+          b = random_event(P_B_GIVEN_A1);
+      } else {
+          b = random_event(P_B_GIVEN_A0);
+      }
+      // Preserve the B draw even though prediction does not use B.
+      (void)b;
+
+      int c;
+      if (z == 1) {
+          c = random_event(P_C_GIVEN_Z1);
+      } else {
+          c = random_event(P_C_GIVEN_Z0);
+      }
+
+      // Select the frozen prediction using A.
+      double prediction;
+      if (a == 0) {
+          prediction = p0;
+      } else {
+          prediction = p1;
+      }
+
+      // Accumulate errors for both predictors.
+      double error = prediction - c;
+      intervention_sum_squared_error += error * error;
+
+      double baseline_error = 0.5 - c;
+      intervention_sum_squared_error_baseline += baseline_error * baseline_error;
+  }
+
+  // Check the denominator before calculating intervention averages.
+  if (num_intervention_observations <= 0) {
+      fprintf(stderr, "Intervention evaluation failed: sample count must be positive.\n");
+      return EXIT_FAILURE;
+  }
+
+  double intervention_brier_score =
+      intervention_sum_squared_error / num_intervention_observations;
+  double intervention_brier_score_baseline =
+      intervention_sum_squared_error_baseline / num_intervention_observations;
+
+  // Display results for this intervention separately from observation.
+  printf("\nIntervention evaluation: do(A=0)\n");
+  printf("Intervention seed: %u\n", intervention_seed);
+  printf("Intervention observations: %d\n", num_intervention_observations);
+  printf("Learned predictor Brier score: %.6f\n", intervention_brier_score);
+  printf("Constant baseline Brier score: %.6f\n", intervention_brier_score_baseline);
 
   return 0;
 }

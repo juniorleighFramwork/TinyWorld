@@ -251,8 +251,17 @@ A one-off check on a temporary source copy with `prediction = 0.5` confirmed
 both scores were exactly 0.25 before display rounding, with exit status 0.
 This check is not yet part of a reusable V3 verification suite.
 
-The result concerns one observational evaluation sample; evaluation under
-intervention has not yet been implemented or performed. No real AI agent is
+Evaluation under do(A=0) uses seed 44 and 10,000 samples, with A fixed to zero
+without a random draw. The learned probabilities remain frozen; B and C keep
+their mechanisms. The measured Brier scores were 0.281148 for the learned
+predictor and 0.250000 for the constant reference. Training and observational
+results remained unchanged. Two executions produced identical output locally.
+A one-off temporary-copy check with prediction fixed to 0.5 during this
+intervention confirmed both scores equal to 0.25 before rounding, with status 0.
+This check is not part of a reusable V3 suite.
+
+These results concern one sample per evaluated condition. Evaluation under
+do(A=1) is not implemented and has no measured results. No real AI agent is
 evaluated, and these results do not demonstrate causal understanding or
 general agent reliability.
 
