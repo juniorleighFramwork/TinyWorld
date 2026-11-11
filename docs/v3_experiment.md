@@ -3,8 +3,8 @@
 Status: observational probability estimation and evaluation on fresh
 observational data are implemented in `causal_v3.c`, including Brier scoring
 and comparison with the constant reference. Evaluation under do(A=0) is also
-implemented and measured, as is evaluation under do(A=1). V3 remains in
-progress: reusable V3 verification scripts have not yet been created.
+implemented and measured, as is evaluation under do(A=1). This scoped experiment
+is implemented and checked by `tests/test_v3.sh`; validation is not exhaustive.
 The preserved V2 reference is commit `0d1b15e`.
 
 ## Question and hypothesis
@@ -272,9 +272,75 @@ Verification executed during the do(A=1) implementation session:
 The learned predictor scored worse than the constant reference on this
 do(A=1) sample, consistent with the hypothesis for this defined world. This
 does not establish performance across seeds or general causal understanding.
-The temporary-copy checks are one-off development verifications; reusable V3
-checks remain to be created. Implementing all three conditions does not by
-itself complete validation of V3 or every success criterion below.
+The temporary-copy checks remain one-off development verifications, distinct
+from the reusable output checks below. Implementing all three conditions does
+not by itself complete exhaustive validation or every success criterion below.
+
+## Reusable V3 verification
+
+From the repository root:
+
+```sh
+sh tests/test_v3.sh
+```
+
+The script requires `/bin/sh`, a C11 compiler invoked as `gcc`, and `dirname`,
+`mktemp`, `rm`, `cmp` and `awk`. These tools are available on the tested Mac.
+It exports `LC_ALL=C` and resolves the source path relative to the script.
+Compilation uses `-std=c11 -Wall -Wextra -Wpedantic`; the binary and captured
+outputs live in a dedicated temporary directory. The local executable is not
+replaced. Cleanup is registered after directory creation and runs on normal
+exit and failure, with HUP, INT and TERM handlers also installed.
+
+### Checks integrated into the script
+
+- Stop the trials if compilation fails.
+- Run the same binary twice; require status 0 and empty stderr for each run.
+- Require byte-identical stdout from both runs.
+- Parse the first output: require exactly one heading for each of the three
+  evaluation conditions and exactly one learned and one constant score per
+  section. Reject scores before a section and missing, duplicate or malformed
+  sections/scores.
+- Validate the entire score string as digits, a decimal point and digits
+  before numeric conversion. Require each score in the inclusive range [0,1]
+  and each constant-reference score numerically equal to 0.25.
+
+No exact value from `rand()` is required for a learned score, and the script
+does not require the learned predictor to outperform or underperform the
+reference. It prints `PASS`/`FAIL`; success returns 0 and a verification, setup
+or compilation failure returns 1. Signal handlers use interruption statuses.
+
+### One-off checks of the verification tooling
+
+These trials were executed during development but are not built into the
+reusable script:
+
+| Trial | Observed result | Status scope |
+|---|---|---|
+| Normal captured output, exact awk block extracted from the script | Accepted, status 0 | Parser only |
+| Missing/duplicate section, malformed heading, missing/duplicate score, score before first section | Each rejected, status 1 | Parser only |
+| Empty value, NaN, inf, trailing text, below-zero/above-one values, constant 0.26 | Each rejected, status 1 | Parser only |
+| Temporary minimal project with original C and identical script | Passed, status 0 | Complete script |
+| Same normal script launched from another directory by absolute path | Passed, status 0 | Complete script |
+| Temporary C displaying constant 0.26 in one condition | Parsing failed, final status 1 | Complete script |
+| Temporary C with intentional compilation error | Final status 1, no simulations launched | Complete script |
+
+The script copies were byte-identical to the original. Dedicated TMPDIR
+locations confirmed removal of the script-owned `tinyworld-v3.*` directory
+after successes and failures. Compiler-created `xcrun_db` cache entries were
+separate from that directory. All trial copies were subsequently cleaned up;
+original C and shell files were unchanged.
+
+### Interpretation and limits
+
+This script verifies the scoped experiment's execution, local repeatability
+and output structure. The parser checks displayed scores, not hidden internal
+values. It does not independently recompute the sums or scores; plausible but
+incorrect numbers can pass. Isolated parser tests are not full-script runs.
+Fault cases tested during development are not exhaustive. Earlier counter
+and constant-prediction injections also remain one-off temporary-copy trials.
+Local reproducibility does not imply identical `rand()` sequences across C
+libraries, broad generalization, causal understanding or AI-agent validation.
 
 ## Success criteria
 

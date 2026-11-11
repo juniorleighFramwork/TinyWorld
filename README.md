@@ -279,11 +279,54 @@ forcing prediction to 0.5 only during do(A=1) yielded both scores exactly
 equal to 0.25 before rounding, with status 0. Temporary test files were removed.
 
 These measurements are distinct from the ideal theoretical expectations
-documented in the experiment design. V3 is still in progress: reusable V3
-verification scripts remain to be created. These results concern one sample
+documented in the experiment design. The scoped V3 experiment is implemented
+and checked by the reusable script below, without exhaustive validation.
+These results concern one sample
 per evaluated condition. No real AI agent is
 evaluated, and these results do not demonstrate causal understanding or
 general agent reliability.
+
+#### V3 verification script
+
+From the project root, run:
+
+```sh
+sh tests/test_v3.sh
+```
+
+Prerequisites are `/bin/sh`, a C11 compiler available as `gcc`, and the tools
+`dirname`, `mktemp`, `rm`, `cmp` and `awk`, available on the tested Mac.
+The script uses `LC_ALL=C`, locates the project from its own path, and compiles
+with `-std=c11 -Wall -Wextra -Wpedantic` in a unique temporary directory.
+It preserves local executables and cleans up its directory on exit, including
+failure; HUP, INT and TERM are handled. Compilation failure stops the trials.
+
+Built-in script checks require two successful executions of the same binary,
+empty stderr for both runs and identical stdout. The output parser requires
+exactly one section for observation, do(A=0) and do(A=1), with exactly one
+learned and one constant Brier score in each section. Scores must be complete
+decimal strings with a point, numerically in [0,1]; each constant score must
+equal 0.25. Missing, duplicate, misplaced or malformed sections/scores fail.
+No exact learned score or ranking relative to the reference is imposed.
+The script reports `PASS`/`FAIL`, returning 0 on success and 1 on a check,
+setup or compilation failure (handled interruptions return their signal status).
+
+Separate one-off development trials checked the exact parser against altered
+outputs, including missing/duplicate sections or scores, malformed headings,
+scores before any section, empty values, NaN/inf, trailing text, out-of-range
+values and a constant other than 0.25. These were isolated parser tests.
+Full-script trials used temporary project copies: normal execution returned
+0, one reference displayed as 0.26 caused final status 1, and an intentional
+C compilation error caused status 1 without launching simulations. Normal
+execution also passed from another directory using an absolute script path.
+The script-owned temporary directory was verified removed after success and
+failure using dedicated TMPDIR locations. These fault-injection and cleanup
+trials are not automatically repeated by the script.
+
+The script checks output structure, ranges and local reproducibility. It does
+not independently recalculate Brier scores, establish cross-platform random
+sequence identity, or validate an AI agent. The existing temporary-copy C
+counter and prediction-injection trials also remain one-off verifications.
 
 ### V4 — Dynamic world (long-term horizon)
 
