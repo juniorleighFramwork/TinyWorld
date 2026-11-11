@@ -3,8 +3,8 @@
 Status: observational probability estimation and evaluation on fresh
 observational data are implemented in `causal_v3.c`, including Brier scoring
 and comparison with the constant reference. Evaluation under do(A=0) is also
-implemented and measured. Evaluation under do(A=1) remains proposed and has
-not been implemented or performed.
+implemented and measured, as is evaluation under do(A=1). V3 remains in
+progress: reusable V3 verification scripts have not yet been created.
 The preserved V2 reference is commit `0d1b15e`.
 
 ## Question and hypothesis
@@ -35,8 +35,8 @@ Use floating-point division and probabilities on the scale [0, 1], not
 percentages. If either training group is empty, report that training cannot
 be completed and stop; do not substitute a zero probability.
 
-For the implemented observational and do(A=0) evaluations, p0 and p1 remain
-fixed after training. The do(A=1) evaluation below is still planned.
+For all three implemented evaluation conditions, p0 and p1 remain fixed
+after training.
 For each evaluation sample, the predictor
 receives only A and returns p0 if A=0 or p1 if A=1. It never receives Z, B,
 the intervention mode, or the current C label before predicting. The evaluator
@@ -199,8 +199,7 @@ The learned predictor scored better than the constant reference on this
 observational evaluation sample. This does not establish performance across
 other seeds or distributions, causal understanding, or AI-agent reliability.
 The intervention scores in the theoretical table above remain theoretical
-expectations, distinct from the measured do(A=0) results below. No do(A=1)
-evaluation has been implemented or measured.
+expectations, distinct from the measured intervention results below.
 
 ### Third milestone: evaluation under do(A=0)
 
@@ -234,8 +233,48 @@ is not integrated into a reusable V3 test suite.
 The learned predictor scored worse than the constant reference on this
 interventional sample, in contrast to the observational evaluation. This is
 consistent with the proposed hypothesis for do(A=0), but does not establish
-performance across seeds or general causal understanding. No measured score
-is attributed to do(A=1), which is still not implemented.
+performance across seeds or general causal understanding.
+
+### Fourth milestone: evaluation under do(A=1)
+
+The added phase uses seed 45 and 10,000 examples. For each example, it generates
+Z, fixes A=1 directly without drawing a random value for A, generates B from
+A, then C from Z. The B draw is retained. Training estimates p0 and p1 remain
+unchanged; the predictor uses only A and therefore selects p1 in this phase.
+Separate squared-error sums compare the learned predictor and constant 0.5
+reference against the same C for each example. The sample count is checked
+before calculating the averages.
+
+Measured results for all three evaluation conditions in the tested environment:
+
+| Evaluation condition | Seed | Examples | Learned Brier | Constant-reference Brier |
+|---|---:|---:|---:|---:|
+| Observation | 43 | 10000 | 0.216343 | 0.250000 |
+| do(A=0) | 44 | 10000 | 0.281148 | 0.250000 |
+| do(A=1) | 45 | 10000 | 0.283409 | 0.250000 |
+
+These measured scores are displayed to six decimal places. They are not the
+ideal expected scores in the theoretical table, and no measured score was
+forced to equal an expected value.
+
+Verification executed during the do(A=1) implementation session:
+
+- Compilation with `-std=c11 -Wall -Wextra -Wpedantic` produced no warnings.
+- Two complete executions produced identical output, empty stderr and status 0.
+- Training estimates and counts, the observational scores and the do(A=0)
+  scores remained unchanged.
+- A temporary source copy forced `prediction = 0.5;` only during do(A=1).
+  Both intervention scores were checked to equal 0.25 before formatting;
+  compilation produced no warnings and execution returned status 0 with empty
+  stderr. Earlier-phase output remained unchanged.
+- Temporary test files were removed; no test injection remains in the source.
+
+The learned predictor scored worse than the constant reference on this
+do(A=1) sample, consistent with the hypothesis for this defined world. This
+does not establish performance across seeds or general causal understanding.
+The temporary-copy checks are one-off development verifications; reusable V3
+checks remain to be created. Implementing all three conditions does not by
+itself complete validation of V3 or every success criterion below.
 
 ## Success criteria
 

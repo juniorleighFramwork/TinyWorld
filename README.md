@@ -260,8 +260,28 @@ A one-off temporary-copy check with prediction fixed to 0.5 during this
 intervention confirmed both scores equal to 0.25 before rounding, with status 0.
 This check is not part of a reusable V3 suite.
 
-These results concern one sample per evaluated condition. Evaluation under
-do(A=1) is not implemented and has no measured results. No real AI agent is
+Evaluation under do(A=1) uses seed 45 and 10,000 examples. A is fixed to 1
+without a random draw; B is generated from A and C from Z, preserving the
+B draw. The learned probabilities remain frozen, so A=1 selects p1.
+
+Measured Brier scores in the tested local environment (six decimal places):
+
+| Condition | Seed | Examples | Learned predictor | Constant 0.5 reference |
+|---|---:|---:|---:|---:|
+| Observation | 43 | 10000 | 0.216343 | 0.250000 |
+| do(A=0) | 44 | 10000 | 0.281148 | 0.250000 |
+| do(A=1) | 45 | 10000 | 0.283409 | 0.250000 |
+
+The do(A=1) implementation compiled without warnings with the documented C11
+options. Two complete executions produced identical output and status 0,
+with training and earlier evaluation results unchanged. In a temporary copy,
+forcing prediction to 0.5 only during do(A=1) yielded both scores exactly
+equal to 0.25 before rounding, with status 0. Temporary test files were removed.
+
+These measurements are distinct from the ideal theoretical expectations
+documented in the experiment design. V3 is still in progress: reusable V3
+verification scripts remain to be created. These results concern one sample
+per evaluated condition. No real AI agent is
 evaluated, and these results do not demonstrate causal understanding or
 general agent reliability.
 
