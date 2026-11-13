@@ -342,6 +342,84 @@ and constant-prediction injections also remain one-off temporary-copy trials.
 Local reproducibility does not imply identical `rand()` sequences across C
 libraries, broad generalization, causal understanding or AI-agent validation.
 
+## Self-review of milestone 968940f
+
+The examined milestone was `968940f` (`docs: prepare TinyWorld V3 for external
+review`). The following were one-off self-review exercises, not additions to
+the reusable test scripts.
+
+### Fresh GitHub clone on the same machine
+
+A new clone was obtained directly from
+`https://github.com/juniorleighFramwork/TinyWorld.git` in a dedicated temporary
+directory, without copying files from the working repository. Its HEAD was
+`968940fd52681229ef8427b4f343c32865e35b16`, matching the expected milestone.
+
+| Command executed in the fresh clone | Observed result | Exit status |
+|---|---|---:|
+| README “Run V3 directly” block | Training estimates and all three displayed scores reproduced | 0 |
+| `sh tests/test_v2.sh` | All checks passed; stderr empty | 0 |
+| `sh tests/test_v3.sh` | All checks passed; stderr empty | 0 |
+
+The direct launch emitted Xcode environment diagnostics on stderr:
+`DVTFilePathFSEvents: Failed to start fs event stream` and a
+`DVTDeveloperPaths` diagnostic reporting failure to obtain
+`DARWIN_USER_CACHE_DIR` via `confstr(3)` (input/output error), followed by a
+fallback to `NSCachesDirectory`. The complete command nevertheless returned
+status 0. These diagnostics were not emitted by the two verification-script
+runs. The clone remained clean, and its dedicated temporary directory was
+removed after verification.
+
+### Separate Brier recalculation from evaluation counts
+
+In a separate temporary copy of the working program, counters were added to
+record the four (A,C) combinations in each evaluation. No random draws,
+predictions or existing score calculations were changed. That instrumented
+copy compiled with `-std=c11 -Wall -Wextra -Wpedantic` without warnings and
+returned status 0 with empty stderr.
+
+| Evaluation | n00: A=0,C=0 | n01: A=0,C=1 | n10: A=1,C=0 | n11: A=1,C=1 | N |
+|---|---:|---:|---:|---:|---:|
+| Observation | 3397 | 1571 | 1594 | 3438 | 10000 |
+| do(A=0) | 5022 | 4978 | 0 | 0 | 10000 |
+| do(A=1) | 0 | 0 | 4972 | 5028 | 10000 |
+
+Each row sums to N=10000. The A=1 group is absent under do(A=0), and the A=0
+group is absent under do(A=1), as required.
+
+A separate Python calculation used `p0 = 1584 / 4930` and
+`p1 = 3476 / 5070`, without first rounding them to the displayed estimates.
+For each row, it computed:
+
+```text
+Brier = [n00*p0^2 + n01*(p0-1)^2
+         + n10*p1^2 + n11*(p1-1)^2] / N
+```
+
+Here `^2` denotes mathematical squaring; the Python calculation used `**2`.
+The constant 0.5 reference has squared error 0.25 for every binary outcome.
+
+| Evaluation | Separately recalculated Brier | Program display | Recalculated minus displayed |
+|---|---:|---:|---:|
+| Observation | 0.216343303307174 | 0.216343 | +0.000000303307 |
+| do(A=0) | 0.281148054425239 | 0.281148 | +0.000000054425 |
+| do(A=1) | 0.283408576886119 | 0.283409 | -0.000000423114 |
+
+All recalculated scores agree with the program at six decimal places; each
+absolute difference from the displayed value is below 0.0000005. This compares
+against formatted scores, not the program's unprinted full-precision sums.
+The original source remained byte-identical and the temporary files were
+removed.
+
+### Scope of this self-review
+
+These exercises are one-off checks, not new reusable tests. The separate
+calculation checks the aggregation formula using outcomes from the same
+simulator; it is not an independent implementation of data generation or
+an exhaustive validation of the causal model. The fresh-clone reproduction
+used the same machine and runtime environment. No external human review or
+reproduction on another machine has yet been performed as part of this review.
+
 ## Success criteria
 
 - Training and evaluation use separate generation phases and the documented,
