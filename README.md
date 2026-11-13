@@ -286,6 +286,48 @@ per evaluated condition. No real AI agent is
 evaluated, and these results do not demonstrate causal understanding or
 general agent reliability.
 
+#### Run V3 directly
+
+From the repository root, compile and display the experiment results in a
+temporary directory, preserving any local `causal_v3` executable:
+
+```sh
+(
+    review_dir=$(mktemp -d "${TMPDIR:-/tmp}/tinyworld-v3-review.XXXXXX") || exit 1
+    trap 'rm -rf -- "$review_dir"' 0
+    trap 'exit 129' HUP
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+
+    gcc -std=c11 -Wall -Wextra -Wpedantic causal_v3.c -o "$review_dir/causal_v3" &&
+        "$review_dir/causal_v3"
+)
+```
+
+The `&&` runs the experiment only if compilation succeeds. Parentheses keep
+the directory variable and traps in a subshell; its exit trap removes only
+the newly created temporary directory.
+
+#### External review
+
+Review question: how does a predictor learned from observational data behave
+when A is imposed by intervention? Training and the three evaluations are
+separate phases with distinct documented seeds. Learned probabilities remain
+fixed, and prediction uses only A to predict C. Results apply to this synthetic
+world and these seeds; no AI agent or protection mechanism has been validated.
+
+Questions for the reviewer:
+
+1. Do the interventions respect the described causal mechanism?
+2. Are the Brier calculations and comparison on the same examples correct?
+3. Are the conclusions proportionate to the checks performed, and what
+   important verification is missing?
+
+The script below checks execution and output consistency. Independent
+recalculation of scores remains a separate review task. See
+[the experiment document](docs/v3_experiment.md) for the protocol, measured
+results and theoretical expectations.
+
 #### V3 verification script
 
 From the project root, run:
